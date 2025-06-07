@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-AI Assistant with Usage Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .app-container {
+        width: 95%;
+        max-width: 1200px;
+        height: 95vh;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        display: flex;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 350px;
+        background: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        background: linear-gradient(45deg, #4CAF50, #45a049);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .provider-selector {
+        padding: 20px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .provider-selector h3 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 16px;
+    }
+
+    .provider-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .provider-btn {
+        padding: 12px 16px;
+        border: 2px solid #e1e5e9;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .provider-btn:hover {
+        border-color: #007bff;
+    }
+
+    .provider-btn.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .provider-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .provider-info {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+
+    .usage-stats {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .usage-section {
+        margin-bottom: 25px;
+    }
+
+    .usage-section h4 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-item {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border-left: 4px solid #4CAF50;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e1e5e9;
+        border-radius: 4px;
+        margin-top: 6px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(45deg, #4CAF50, #45a049);
+        transition: width 0.3s;
+    }
+
+    .progress-fill.warning {
+        background: linear-gradient(45deg, #ff9800, #e68900);
+    }
+
+    .progress-fill.danger {
+        background: linear-gradient(45deg, #f44336, #d32f2f);
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .header {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .tab-container {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .tab {
+        padding: 15px 25px;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+
+    .tab:hover {
+        background: #e9ecef;
+    }
+
+    .tab.active {
+        background: white;
+        border-bottom-color: #007bff;
+        color: #007bff;
+    }
+
+    .tab-content {
+        flex: 1;
+        display: none;
+    }
+
+    .tab-content.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f8f9fa;
+    }
+
+    .message {
+        margin-bottom: 20px;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-message {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .user-message .message-content {
+        background: #007bff;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 20px 20px 5px 20px;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+
+    .assistant-message {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .assistant-message .message-content {
+        background: white;
+        color: #333;
+        padding: 15px 20px;
+        border-radius: 20px 20px 20px 5px;
+        max-width: 85%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        word-wrap: break-word;
+    }
+
+    .message-meta {
+        font-size: 11px;
+        color: #666;
+        margin-top: 5px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .assistant-message pre {
+        background: #f1f3f4;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 10px 0;
+        border-left: 4px solid #4CAF50;
+    }
+
+    .assistant-message code {
+        background: #f1f3f4;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .input-container {
+        padding: 20px;
+        background: white;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+    }
+
+    #messageInput {
+        flex: 1;
+        padding: 12px 18px;
+        border: 2px solid #e1e5e9;
+        border-radius: 25px;
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    #messageInput:focus {
+        border-color: #007bff;
+    }
+
+    #sendBtn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+        min-width: 80px;
+    }
+
+    #sendBtn:hover:not(:disabled) {
+        background: #0056b3;
+    }
+
+    #sendBtn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .token-calculator {
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .calculator-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .calculator-section h3 {
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+        font-weight: 500;
+    }
+
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .calculate-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    .calculate-btn:hover {
+        background: #218838;
+    }
+
+    .calculation-result {
+        background: #e8f5e8;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #28a745;
+    }
+
+    .result-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .loading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #666;
+        font-style: italic;
+    }
+
+    .loading-dots::after {
+        content: '';
+        animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+        0% { content: ''; }
+        25% { content: '.'; }
+        50% { content: '..'; }
+        75% { content: '...'; }
+    }
+
+    .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #dc3545;
+        margin: 10px 0;
+    }
+
+    .welcome-message {
+        text-align: center;
+        color: #666;
+        padding: 40px 20px;
+        font-style: italic;
+    }
+
+    .refresh-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-top: 10px;
+        width: 100%;
+    }
+
+    .refresh-btn:hover {
+        background: #5a6268;
+    }
+
+    @media (max-width: 768px) {
+        .app-container {
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+        }
+        
+        .sidebar {
+            width: 100%;
+            height: auto;
+            max-height: 40vh;
+        }
+        
+        .main-content {
+            flex: 1;
+        }
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>🤖 Multi-AI Assistant</h2>
+                <p>Claude • OpenAI • Gemini</p>
+            </div>
+
+```
+        <div class="provider-selector">
+            <h3>AI Provider</h3>
+            <div class="provider-buttons">
+                <button class="provider-btn active" data-provider="claude">
+                    <div>
+                        <strong>Claude Sonnet 4</strong>
+                        <div class="provider-info">$3/$15 per M tokens</div>
+                    </div>
+                    <span class="status">✅</span>
+                </button>
+                <button class="provider-btn" data-provider="openai">
+                    <div>
+                        <strong>GPT-4o Mini</strong>
+                        <div class="provider-info">$0.15/$0.60 per M tokens</div>
+                    </div>
+                    <span class="status">❌</span>
+                </button>
+                <button class="provider-btn" data-provider="gemini">
+                    <div>
+                        <strong>Gemini 1.5 Flash</strong>
+                        <div class="provider-info">$0.075/$0.30 per M tokens</div>
+                    </div>
+                    <span class="status">❌</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="usage-stats">
+            <div class="usage-section">
+                <h4>Rate Limits (Per Minute)</h4>
+                <div id="rateLimitStats"></div>
+            </div>
+            
+            <div class="usage-section">
+                <h4>Daily Usage</h4>
+                <div id="dailyUsageStats"></div>
+            </div>
+            
+            <div class="usage-section">
+                <h4>Monthly Cost</h4>
+                <div id="monthlyUsageStats"></div>
+            </div>
+            
+            <button class="refresh-btn" onclick="refreshUsageStats()">
+                🔄 Refresh Stats
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Multi-AI Coding Assistant</h1>
+            <p>Choose your AI provider and start coding!</p>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tab active" data-tab="chat">💬 Chat</div>
+            <div class="tab" data-tab="calculator">🧮
+```
